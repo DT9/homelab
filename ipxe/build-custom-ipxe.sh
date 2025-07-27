@@ -1,0 +1,1 @@
+docker run -it --rm -v $(pwd):/custom-pxe --platform=linux/amd64 -e PXE_FILE=boot.ipxe vtajzich/ipxe
