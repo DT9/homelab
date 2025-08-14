@@ -1,0 +1,157 @@
+# =============================================================================
+# PROXMOX RBAC CONFIGURATION (Roles, Groups, Users, ACLs)
+# =============================================================================
+
+# =============================================================================
+# ROLES (Custom roles beyond built-in ones)
+# =============================================================================
+
+# pve_roles:
+#   - name: "VMUser"
+#     privileges:
+#       - "VM.Allocate"
+#       - "VM.Clone"
+#       - "VM.Config.CDROM"
+#       - "VM.Config.CPU"
+#       - "VM.Config.Memory"
+#       - "VM.Console"
+#       - "VM.PowerMgmt"
+#   
+#   - name: "BackupOperator"
+#     privileges:
+#       - "Datastore.Audit"
+#       - "VM.Backup"
+
+# =============================================================================
+# GROUPS
+# =============================================================================
+
+pve_groups:
+  - name: "administrators"
+    comment: "System administrators with full access"
+#   
+#   - name: "vm-users"
+#     comment: "Regular users who can manage VMs"
+#   
+#   - name: "backup-operators"
+#     comment: "Users who can perform backups"
+#   
+#   - name: "monitoring"
+#     comment: "Monitoring service accounts"
+
+# =============================================================================
+# USERS
+# =============================================================================
+
+pve_users:
+  # Local PAM users
+  - name: "pveadmin@pam"
+    email: "mr.dennis.truong@gmail.com"
+    firstname: "Proxmox"
+    lastname: "Administrator"
+    groups: ["administrators"]
+    password: "{{ vault_pveadmin_password }}"
+    comment: "Main administrator account"
+#   
+#   - name: "vmuser@pam"
+#     email: "vmuser@example.com"
+#     firstname: "VM"
+#     lastname: "User"
+#     groups: ["vm-users"]
+#     password: "changeme123"  # Use vault for production!
+#   
+#   # API tokens for automation
+#   - name: "automation@pve"
+#     email: "automation@example.com"
+#     groups: ["administrators"]
+#     comment: "Automation service account"
+
+# =============================================================================
+# AUTHENTICATION REALMS (LDAP/AD Integration)
+# =============================================================================
+
+# pve_realms:
+#   - realm: "company-ldap"
+#     type: "ldap"
+#     server1: "ldap.company.com"
+#     port: 636
+#     secure: 1
+#     base_dn: "ou=users,dc=company,dc=com"
+#     user_attr: "uid"
+#     bind_dn: "cn=proxmox,ou=service,dc=company,dc=com"
+#     bind_password: "ldap-bind-password"  # Use vault!
+#     sync_defaults_options: 1
+#     comment: "Company LDAP authentication"
+#   
+#   - realm: "company-ad"
+#     type: "ad" 
+#     server1: "dc1.company.com"
+#     server2: "dc2.company.com"
+#     port: 636
+#     secure: 1
+#     domain: "company.com"
+#     comment: "Active Directory authentication"
+
+# =============================================================================
+# ACCESS CONTROL LISTS (ACLs)
+# =============================================================================
+
+pve_acls:
+  # Full admin access
+  - path: "/"
+    roles: ["Administrator"] 
+    groups: ["administrators"]
+    comment: "Full system access for administrators"
+#   
+#   # VM management permissions
+#   - path: "/vms"
+#     roles: ["VMUser"]
+#     groups: ["vm-users"]
+#     comment: "VM management for regular users"
+#   
+#   # Storage access
+#   - path: "/storage/local"
+#     roles: ["DatastoreUser"]
+#     groups: ["vm-users"]
+#     comment: "Local storage access"
+#   
+#   # Backup permissions
+#   - path: "/storage/backup-nfs"
+#     roles: ["BackupOperator"]
+#     groups: ["backup-operators"]
+#     comment: "Backup storage access"
+#   
+#   # Node-specific permissions
+#   - path: "/nodes/{{ inventory_hostname }}"
+#     roles: ["VMUser"]
+#     users: ["vmuser@pam"]
+#     comment: "Node access for VM users"
+
+# =============================================================================
+# POOLS (Resource Pools)
+# =============================================================================
+
+# pve_pools:
+#   - name: "production"
+#     comment: "Production VMs and resources"
+#   
+#   - name: "development" 
+#     comment: "Development and testing environment"
+#   
+#   - name: "backup-jobs"
+#     comment: "Backup job resources"
+
+# =============================================================================
+# DATACENTER CONFIGURATION
+# =============================================================================
+
+# pve_datacenter_cfg:
+#   keyboard: "en-us"
+#   language: "en"
+#   http_proxy: "http://proxy.company.com:8080"  # If behind proxy
+#   migration_unsecure: false
+#   console: "xtermjs"  # or "vv" for virt-viewer
+#   email_from: "proxmox@company.com"
+#   # notify:
+#   #   package-updates: "mailto:admin@company.com"
+#   #   replication: "mailto:admin@company.com"

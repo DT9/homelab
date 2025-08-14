@@ -1,0 +1,6 @@
+---
+- name: Complete Proxmox Deployment with Security
+  import_playbook: site.yml
+
+- name: Apply Security Configuration
+  import_playbook: playbooks/security.yml

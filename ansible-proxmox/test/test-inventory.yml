@@ -1,0 +1,14 @@
+---
+all:
+  children:
+    proxmox:
+      hosts:
+        proxmox-test:
+          ansible_connection: docker
+          ansible_user: root
+          ansible_python_interpreter: /usr/bin/python3
+          gpu_vendor_device_ids: "10de:2206,10de:1aef"
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_become: true
+        ansible_become_method: sudo

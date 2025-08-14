@@ -1,0 +1,102 @@
+# Official Tinkerbell Stack Values (2024-2025)
+# Use with: helm install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell --version v0.19.0
+
+# Required Configuration
+trustedProxies: ["10.244.0.0/16", "10.96.0.0/12", "10.144.0.0/16"]  # Pod CIDRs for your cluster
+publicIP: "10.144.0.100"  # LoadBalancer IP
+artifactsFileServer: "http://10.144.0.100:7173"  # HookOS artifacts URL
+namespace: tinkerbell
+
+# Smee (DHCP/TFTP/HTTP Service) - Replaces Boots
+smee:
+  trustedProxies: ["10.244.0.0/16", "10.144.0.0/16"]
+  dhcpMode: "reservation"  # Options: reservation, proxy, auto-proxy
+  
+  # DHCP Configuration
+  dhcp:
+    pool:
+      start: "10.144.0.0"
+      end: "10.144.0.200"
+      subnet: "10.144.0.0/16"
+      gateway: "10.144.0.1"
+      dns: ["8.8.8.8", "1.1.1.1"]
+      lease: "24h"
+  
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+# Hegel (Metadata Service)
+hegel:
+  trustedProxies: ["10.244.0.0/16", "10.144.0.0/16"]
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+# Tink (Workflow Engine)
+tink:
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Rufio (BMC Management)
+rufio:
+  enabled: true
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+# PostgreSQL Database
+postgresql:
+  auth:
+    postgresPassword: "tinkerbell"
+    username: "tinkerbell"
+    password: "tinkerbell"
+    database: "tinkerbell"
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# Configuration Examples
+# See separate files for complete examples:
+# - hardware-example.yaml: Hardware resource definition
+# - template-example.yaml: Template/workflow definition  
+# - workflow-example.yaml: Workflow resource that ties hardware and template together
+# Create with: kubectl apply -f hardware-example.yaml -f template-example.yaml -f workflow-example.yaml
+
+# Service configuration 
+service:
+  type: LoadBalancer
+  loadBalancerIP: "10.144.0.100"
+
+# Service Monitor (optional)
+serviceMonitor:
+  enabled: false
+
+# Additional Kubernetes Configuration
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Security Context
+securityContext:
+  runAsNonRoot: false
+  runAsUser: 0
+  fsGroup: 0

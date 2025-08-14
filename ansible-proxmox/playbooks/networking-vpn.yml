@@ -1,0 +1,164 @@
+---
+- name: Setup ZeroTier and Tailscale VPN networking
+  hosts: proxmox
+  become: true
+  vars:
+    # ZeroTier configuration
+    zerotier_network_id: "{{ vault_zerotier_network_id | default('') }}"
+    zerotier_api_token: "{{ vault_zerotier_api_token | default('') }}"
+    
+    # Tailscale configuration  
+    tailscale_auth_key: "{{ vault_tailscale_auth_key | default('') }}"
+    tailscale_tags: "tag:proxmox,tag:homelab"
+    
+    # Enable both or choose one
+    install_zerotier: true
+    install_tailscale: true
+
+  tasks:
+    # ZeroTier installation and setup
+    - name: Install required packages for ZeroTier setup
+      package:
+        name: 
+          - curl
+          - gnupg
+        state: present
+      when: install_zerotier
+
+    - name: Add ZeroTier GPG key
+      apt_key:
+        url: https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg
+        state: present
+      when: install_zerotier
+
+    - name: Add ZeroTier repository
+      apt_repository:
+        repo: "deb https://download.zerotier.com/debian/{{ ansible_distribution_release }} {{ ansible_distribution_release }} main"
+        state: present
+        update_cache: yes
+      when: install_zerotier
+
+    - name: Install ZeroTier
+      package:
+        name: zerotier-one
+        state: present
+      when: install_zerotier
+
+    - name: Start and enable ZeroTier service
+      systemd:
+        name: zerotier-one
+        state: started
+        enabled: yes
+      when: install_zerotier
+
+    - name: Join ZeroTier network
+      command: zerotier-cli join {{ zerotier_network_id }}
+      when: 
+        - install_zerotier
+        - zerotier_network_id != ""
+      register: zerotier_join
+      changed_when: "'OK' in zerotier_join.stdout"
+
+    - name: Get ZeroTier node ID
+      command: zerotier-cli info
+      register: zerotier_info
+      when: install_zerotier
+      changed_when: false
+
+    - name: Display ZeroTier node ID
+      debug:
+        msg: "ZeroTier Node ID: {{ zerotier_info.stdout.split()[2] }}"
+      when: 
+        - install_zerotier
+        - zerotier_info is defined
+
+    # Tailscale installation and setup
+    - name: Install required packages for Tailscale setup
+      package:
+        name: 
+          - curl
+          - gnupg
+        state: present
+      when: install_tailscale
+
+    - name: Add Tailscale GPG key
+      apt_key:
+        url: https://pkgs.tailscale.com/stable/debian/{{ ansible_distribution_release }}.noarmor.gpg
+        state: present
+      when: install_tailscale
+
+    - name: Add Tailscale repository
+      apt_repository:
+        repo: "deb https://pkgs.tailscale.com/stable/debian {{ ansible_distribution_release }} main"
+        state: present
+        update_cache: yes
+      when: install_tailscale
+
+    - name: Install Tailscale
+      package:
+        name: tailscale
+        state: present
+      when: install_tailscale
+
+    - name: Start and enable Tailscale service
+      systemd:
+        name: tailscaled
+        state: started
+        enabled: yes
+      when: install_tailscale
+
+    - name: Authenticate Tailscale with auth key
+      command: tailscale up --auth-key={{ tailscale_auth_key }} --advertise-tags={{ tailscale_tags }}
+      when: 
+        - install_tailscale
+        - tailscale_auth_key != ""
+      register: tailscale_auth
+      changed_when: "'Success' in tailscale_auth.stderr or tailscale_auth.rc == 0"
+
+    - name: Get Tailscale status
+      command: tailscale status
+      register: tailscale_status
+      when: install_tailscale
+      changed_when: false
+      failed_when: false
+
+    - name: Display Tailscale authentication URL if needed
+      debug:
+        msg: "Run 'tailscale up' on the server and visit the URL to authenticate"
+      when: 
+        - install_tailscale
+        - tailscale_auth_key == ""
+        - tailscale_status.rc != 0
+
+    # Network configuration for VPN access to Proxmox
+    - name: Configure firewall for VPN access
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+        comment: "Proxmox VPN access"
+      loop:
+        - "8006"  # Proxmox web interface
+        - "22"    # SSH
+      ignore_errors: yes
+
+    - name: Enable IP forwarding for VPN routing
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        state: present
+        reload: yes
+
+    - name: Configure Proxmox to listen on all interfaces
+      lineinfile:
+        path: /etc/default/pveproxy
+        regexp: '^LISTEN_IP='
+        line: 'LISTEN_IP="0.0.0.0"'
+        create: yes
+      notify: restart pveproxy
+
+  handlers:
+    - name: restart pveproxy
+      systemd:
+        name: pveproxy
+        state: restarted
