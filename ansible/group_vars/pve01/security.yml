@@ -1,0 +1,41 @@
+# =============================================================================
+# FIREWALL CONFIGURATION
+# =============================================================================
+
+pve_firewall_enabled: true
+pve_firewall_policy_in: "DROP"
+pve_firewall_policy_out: "ACCEPT"
+
+pve_firewall_rules:
+    # Management access
+    - action: "ACCEPT"
+      type: "in"
+      dport: 22
+      proto: "tcp"
+      source: "10.144.0.0/24"
+      comment: "SSH from LAN"
+      
+    - action: "ACCEPT"
+      type: "in"
+      dport: 8006
+      proto: "tcp"
+      source: "10.144.0.0/24"
+      comment: "Proxmox web interface"
+      
+    # VPN access
+    - action: "ACCEPT"
+      type: "in"
+      dport: "9993"
+      proto: "udp"
+      comment: "ZeroTier"
+
+    - action: "ACCEPT"
+      type: "in"
+      dport: "41641"
+      proto: "udp"
+      comment: "Tailscale"
+
+    # Deny all other
+    - action: "DROP"
+      type: "in"
+      comment: "Default deny"

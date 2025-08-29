@@ -1,0 +1,20 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: debian
+    username: debian
+    password: "$6$CZMrMWoDMAbc8dZj$k9YtyaaGtghp8lIzc1gX/32uAzcGmR3kwXiR6RPUO/yHOP.t.Gy4FLIiNP0Pps1k35RZPeRhXT289HYiy/Hz51" 
+  keyboard:
+    layout: us
+  locale: en_US
+  ssh:
+    install-server: true
+    allow-pw: false
+    authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA8cR0q4kvA/Br2ze27RYWETDfpxsbFJZogN5sW7OHhw
+  packages:
+    - cloud-init
+  late-commands:
+    - curtin in-target --target=/target -- systemctl enable cloud-init
+
