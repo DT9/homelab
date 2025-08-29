@@ -1,0 +1,121 @@
+---
+- name: Configure Proxmox Backup Jobs  
+  hosts: pve01
+  become: true
+  vars_files:
+    - ../group_vars/pve01/vault.yml
+    
+  vars:
+    # PBS backup job configurations
+    pbs_backup_jobs:
+      - id: "daily-pbs-backup"
+        schedule: "02:00"                    # 2 AM daily
+        storage: "pbs-backup"                # PBS storage from main config
+        retention:
+          keep_last: 7                       # Keep last 7 backups
+          keep_daily: 14                     # Keep daily for 2 weeks
+          keep_weekly: 8                     # Keep weekly for 2 months  
+          keep_monthly: 12                   # Keep monthly for 1 year
+          keep_yearly: 3                     # Keep yearly for 3 years
+        enabled: true
+        mode: "snapshot"                     # Consistent snapshots
+        compress: true                       # PBS handles compression
+        notes: "Daily incremental backup to PBS"
+        
+      # Optional: Separate job for critical VMs
+      - id: "critical-vm-backup"
+        schedule: "*/4 * * *"                # Every 4 hours
+        storage: "pbs-backup"
+        vmid: [100, 101, 102]                # Specify critical VM IDs
+        retention:
+          keep_last: 24                      # Keep last 24 (4-hour intervals)
+          keep_daily: 7
+        enabled: false                       # Disabled by default
+        notes: "Critical VMs - 4-hourly backup"
+
+  tasks:
+    - name: Check if PBS storage is configured
+      uri:
+        url: "https://{{ ansible_host }}:8006/api2/json/nodes/{{ inventory_hostname }}/storage"
+        method: GET
+        user: root
+        password: "{{ ansible_ssh_pass | default('') }}"
+        force_basic_auth: yes
+        validate_certs: no
+      register: storage_check
+      failed_when: false
+      delegate_to: localhost
+
+    - name: Display PBS storage status
+      debug:
+        msg: |
+          PBS backup configuration requires manual setup:
+          
+          1. Install and configure PBS server first (section 2.4)
+          2. Get PBS fingerprint: pvecm expected-fingerprint
+          3. Update vault.yml with actual PBS fingerprint
+          4. Run backup job configuration
+          
+          Current backup jobs configured (will apply after PBS setup):
+          {% for job in pbs_backup_jobs %}
+          - {{ job.id }}: {{ job.schedule }} ({{ job.enabled | ternary('enabled', 'disabled') }})
+          {% endfor %}
+
+    - name: Create backup job configuration script  
+      copy:
+        dest: /root/configure-backup-jobs.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Proxmox Backup Job Configuration Script
+          # Run after PBS installation and configuration
+          
+          echo "Configuring Proxmox backup jobs..."
+          
+          # Configure daily-pbs-backup
+          echo "Creating backup job: daily-pbs-backup"
+          pvesh create /cluster/backup --id daily-pbs-backup \
+            --starttime "02:00" \
+            --storage pbs-backup \
+            --mode snapshot \
+            --notes "Daily incremental backup to PBS" \
+            --prune-backups keep-last=7,keep-daily=14,keep-weekly=8,keep-monthly=12,keep-yearly=3 \
+            --enabled 1
+          
+          # Configure critical-vm-backup (disabled by default)
+          echo "Creating backup job: critical-vm-backup (disabled)"
+          pvesh create /cluster/backup --id critical-vm-backup \
+            --starttime "*/4 * * *" \
+            --storage pbs-backup \
+            --mode snapshot \
+            --vmid 100,101,102 \
+            --notes "Critical VMs - 4-hourly backup" \
+            --prune-backups keep-last=24,keep-daily=7 \
+            --enabled 0
+            
+          echo "Backup job configuration complete!"
+          echo "Check configuration with: pvesh get /cluster/backup"
+
+    - name: Display next steps
+      debug:
+        msg: |
+          Phase 2 Storage & Backup Configuration Complete!
+          
+          ✅ Configured:
+          - PBS backup storage (pending PBS server setup)
+          - LVM-Thin primary VM storage  
+          - ISO and template storage
+          - Automated backup job definitions
+          
+          📋 Next Steps:
+          1. Set up PBS server (section 2.4 - you'll handle this)
+          2. Update vault_pbs_fingerprint in vault.yml
+          3. Run: /root/configure-backup-jobs.sh
+          4. Verify backups: pvesh get /cluster/backup
+          
+          🔧 Manual Commands:
+          # Test PBS connection:
+          pvesm status pbs-backup
+          
+          # Run backup manually:  
+          vzdump --storage pbs-backup --mode snapshot --notes "Test backup"

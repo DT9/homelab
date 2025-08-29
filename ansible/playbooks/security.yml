@@ -1,0 +1,109 @@
+---
+- name: Apply Security Configuration using Galaxy Roles
+  hosts: pve01
+  become: true
+  vars_files:
+    - ../group_vars/pve01/vault.yml
+    
+  vars:
+    # =============================================================================
+    # GEERLINGGUY.SECURITY ROLE CONFIGURATION
+    # =============================================================================
+    
+    # SSH Hardening
+    security_ssh_port: 22
+    security_ssh_password_authentication: "no" 
+    security_ssh_permit_root_login: "prohibit-password"
+    security_ssh_permit_empty_passwords: "no"
+    security_ssh_challenge_response_auth: "no"
+    security_ssh_gss_api_authentication: "no"
+    security_ssh_x11_forwarding: "no"
+    security_ssh_max_auth_tries: 3
+    security_ssh_client_alive_interval: 300
+    security_ssh_client_alive_count_max: 2
+    security_ssh_usedns: "no"
+
+    # Other security settings
+    security_sudoers_passwordless: []
+    security_autoupdate_enabled: true
+
+    # =============================================================================
+    # ROBERTDEBOCK.FAIL2BAN ROLE CONFIGURATION  
+    # =============================================================================
+    
+    # Basic fail2ban settings
+    fail2ban_loglevel: "INFO"
+    fail2ban_logtarget: "/var/log/fail2ban.log"
+    fail2ban_ignoreself: "true"
+    fail2ban_ignoreips:
+      - "127.0.0.1/8"
+      - "::1"
+      - "10.144.0.0/24"  # Ignore LAN subnet
+
+    # Timing settings
+    fail2ban_bantime: 3600    # 1 hour ban
+    fail2ban_findtime: 600    # 10 minute window  
+    fail2ban_maxretry: 3      # 3 attempts before ban
+
+    # Email notifications
+    fail2ban_destemail: "mr.dennis.truong@gmail.com"
+    fail2ban_sender: "proxmox@{{ ansible_fqdn }}"
+
+    # Custom filter directory
+    fail2ban_filterd_path: "files/fail2ban/filter.d"
+
+    # Custom jail configurations
+    fail2ban_jail_configuration:
+      # SSH jail configuration
+      - option: "enabled"
+        value: "true"
+        section: "sshd"
+      - option: "maxretry"
+        value: "3"
+        section: "sshd"
+      - option: "bantime"
+        value: "3600"
+        section: "sshd"
+
+    # =============================================================================
+    # WEAREINTERACTIVE.UFW ROLE CONFIGURATION
+    # =============================================================================
+    
+    # UFW enabled
+    ufw_enabled: true
+    ufw_logging: "on"
+
+    # UFW Rules
+    ufw_rules:
+      # Allow SSH from LAN only
+      - rule: allow
+        port: '22'
+        proto: tcp
+        src: '10.144.0.0/24'
+        comment: 'SSH from LAN'
+        
+      # Allow Proxmox web interface from LAN only  
+      - rule: allow
+        port: '8006'
+        proto: tcp
+        src: '10.144.0.0/24'
+        comment: 'Proxmox web interface'
+        
+      # Allow VPN ports
+      - rule: allow
+        port: '9993'
+        proto: udp
+        comment: 'ZeroTier VPN'
+
+    # UFW default policies
+    ufw_default_input_policy: 'deny'
+    ufw_default_output_policy: 'allow'
+    ufw_default_forward_policy: 'deny'
+  
+  roles:
+    # SSH hardening and basic security
+    - geerlingguy.security
+    # Fail2ban for intrusion prevention
+    - robertdebock.fail2ban  
+    # UFW firewall management
+    - weareinteractive.ufw

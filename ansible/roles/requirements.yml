@@ -1,0 +1,23 @@
+---
+collections:
+  - name: artis3n.tailscale
+  - name: community.general
+
+roles:
+  - name: lae.proxmox
+    version: main
+  - name: m4rcu5nl.zerotier-one
+  # Security roles
+  - name: robertdebock.fail2ban
+    version: "5.0.6"
+  - name: weareinteractive.ufw
+    version: "2.0.1"  
+  - name: geerlingguy.security
+    version: "3.0.0"
+  - name: geerlingguy.clamav
+    version: "2.1.0"
+  - name: geerlingguy.postfix
+  - name: geerlingguy.ntp
+
+
+  

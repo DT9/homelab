@@ -1,0 +1,7 @@
+vault_influxdb_token: "your_influxdb_token_here"
+vault_gmail_app_password: "your_gmail_app_password"
+vault_pbs_password: "your_pbs_user_password"
+vault_pbs_fingerprint: "SHA256:your_pbs_server_fingerprint"
+vault_pveadmin_password: "your_pveadmin_password_here"
+vault_zerotier_network_id: "6ab565387a9084c1"
+vault_tailscale_auth_key: "your_tailscale_auth_key_here"

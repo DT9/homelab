@@ -1,0 +1,75 @@
+---
+- name: Setup VPN networking with Galaxy roles (test version)
+  hosts: proxmox
+  become: true
+  vars:
+    # Tailscale configuration
+    tailscale_authkey: "{{ vault_tailscale_auth_key | default('') }}"
+    tailscale_args: "--advertise-tags=tag:proxmox,tag:homelab --accept-routes"
+    
+    # Control which VPNs to install
+    install_tailscale: true
+    install_zerotier: false  # Skip for testing since role is missing
+
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+  roles:
+    # Install Tailscale using Galaxy collection
+    - role: artis3n.tailscale.machine
+      when: install_tailscale
+      vars:
+        tailscale_up_skip: "{{ tailscale_authkey == '' }}"
+
+  tasks:
+    # Additional Proxmox-specific configuration
+    - name: Configure firewall for VPN access to Proxmox
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+        comment: "Proxmox VPN access"
+      loop:
+        - "8006"  # Proxmox web interface
+        - "22"    # SSH
+        - "3128"  # Proxmox proxy (optional)
+      ignore_errors: yes
+
+    - name: Enable IP forwarding for VPN routing
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        state: present
+        reload: yes
+
+    - name: Configure Proxmox to listen on all interfaces
+      lineinfile:
+        path: /etc/default/pveproxy
+        regexp: '^LISTEN_IP='
+        line: 'LISTEN_IP="0.0.0.0"'
+        create: yes
+      notify: restart pveproxy
+
+    # Display connection info
+    - name: Get Tailscale status
+      command: tailscale status --json
+      register: tailscale_status
+      when: install_tailscale
+      changed_when: false
+      failed_when: false
+
+    - name: Display Tailscale connection info
+      debug:
+        msg: 
+          - "Tailscale Status: {{ 'Connected' if tailscale_status.rc == 0 else 'Not authenticated' }}"
+          - "If not connected, run: sudo tailscale up {{ tailscale_args }}"
+      when: install_tailscale
+
+  handlers:
+    - name: restart pveproxy
+      systemd:
+        name: pveproxy
+        state: restarted

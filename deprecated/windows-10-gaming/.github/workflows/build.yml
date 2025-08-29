@@ -1,0 +1,44 @@
+name: Build Windows Golden Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.pkr.hcl'
+      - 'http/**'
+      - 'scripts/**'
+
+jobs:
+  build-image:
+    name: Build Windows 10/11 Golden Image
+    runs-on: self-hosted-windows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3.0.0
+        with:
+          version: "1.10.0"
+
+      - name: Initialize Packer
+        run: packer init .
+
+      - name: Validate Packer template
+        run: packer validate -var "admin_password=${{ secrets.ADMIN_PASSWORD }}" .
+
+      - name: Build Packer image
+        run: |
+          packer build -timestamp-ui -on-error=cleanup -force `
+          -var "admin_password=${{ secrets.ADMIN_PASSWORD }}" `
+          -var "iso_path=${{ vars.ISO_PATH || 'C:/ISOs/en-us_windows_10_enterprise_ltsc_2021_x64_dvd_b4b31a3a.iso' }}" `
+          -var "iso_checksum=${{ vars.ISO_CHECKSUM || 'SHA256:B4B31A3A362E8942621A58F9B6636735E2F0A889A121D50E34B688A73C9A5A4A' }}" `
+          .
+
+      - name: Upload VHDX Artifact
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: windows-golden-image-vhdx
+          path: output/windows-golden-image.vhdx 
