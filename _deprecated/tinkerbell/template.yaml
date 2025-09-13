@@ -1,0 +1,108 @@
+apiVersion: tinkerbell.org/v1alpha1
+kind: Template
+metadata:
+  name: debian-minimal
+  namespace: tinkerbell
+spec:
+  data: |
+    version: "0.1"
+    name: debian_minimal_install
+    global_timeout: 6000
+    tasks:
+      - name: "install-debian"
+        worker: "{{.device_1}}"
+        volumes:
+          - /dev:/dev
+          - /dev/console:/dev/console
+          - /lib/firmware:/lib/firmware:ro
+        actions:
+          - name: "stream-debian-image"
+            image: quay.io/tinkerbell/actions/archive2disk:latest
+            timeout: 600
+            environment:
+              ARCHIVE_URL: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.raw"
+              DEST_DISK: "/dev/sda"
+              COMPRESSED: "true"
+              
+          - name: "grow-partition"
+            image: quay.io/tinkerbell/actions/cexec:latest
+            timeout: 90
+            environment:
+              BLOCK_DEVICE: "/dev/sda1"
+              FS_TYPE: "ext4"
+              CHROOT: "y"
+              DEFAULT_INTERPRETER: "/bin/bash -c"
+              CMD_LINE: "resize2fs /dev/sda1"
+              
+          - name: "minimal-setup"
+            image: quay.io/tinkerbell/actions/cexec:latest
+            timeout: 300
+            environment:
+              BLOCK_DEVICE: "/dev/sda1"
+              FS_TYPE: "ext4"
+              CHROOT: "y"
+              DEFAULT_INTERPRETER: "/bin/bash -c"
+              CMD_LINE: |
+                apt-get update
+                apt-get install -y openssh-server sudo
+                systemctl enable ssh
+                echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+                useradd -m -s /bin/bash -G sudo admin
+                passwd -d root
+                passwd -d admin
+                echo 'admin ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/admin
+                
+          - name: "optional-packages-script"
+            image: quay.io/tinkerbell/actions/writefile:latest
+            timeout: 90
+            environment:
+              DEST_DISK: "/dev/sda1"
+              FS_TYPE: "ext4"
+              DEST_PATH: "/usr/local/bin/install-extras"
+              CONTENTS: |
+                #!/bin/bash
+                # Optional package installer
+                # Usage: sudo /usr/local/bin/install-extras [basic|dev|server]
+                
+                set -e
+                
+                case "${1:-basic}" in
+                  basic)
+                    apt-get update
+                    apt-get install -y curl wget vim htop net-tools
+                    ;;
+                  dev)
+                    apt-get update  
+                    apt-get install -y curl wget vim htop net-tools git python3 python3-pip build-essential
+                    ;;
+                  server)
+                    apt-get update
+                    apt-get install -y curl wget vim htop net-tools git python3 python3-pip nginx docker.io
+                    systemctl enable nginx docker
+                    ;;
+                  *)
+                    echo "Usage: $0 [basic|dev|server]"
+                    echo "  basic: curl, wget, vim, htop, net-tools"
+                    echo "  dev:   basic + git, python3, build tools"
+                    echo "  server: dev + nginx, docker"
+                    exit 1
+                    ;;
+                esac
+                
+          - name: "make-script-executable"
+            image: quay.io/tinkerbell/actions/cexec:latest
+            timeout: 30
+            environment:
+              BLOCK_DEVICE: "/dev/sda1"
+              FS_TYPE: "ext4"
+              CHROOT: "y"
+              DEFAULT_INTERPRETER: "/bin/bash -c"
+              CMD_LINE: "chmod +x /usr/local/bin/install-extras"
+                
+          - name: "reboot"
+            image: quay.io/tinkerbell/actions/kexec:latest
+            timeout: 90
+            pid: host
+            environment:
+              BLOCK_DEVICE: "/dev/sda1"
+              FS_TYPE: "ext4"

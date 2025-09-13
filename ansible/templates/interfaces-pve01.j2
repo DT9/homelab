@@ -1,0 +1,142 @@
+# =============================================================================
+# PROXMOX NETWORK INTERFACES TEMPLATE
+# =============================================================================
+# This template generates /etc/network/interfaces for Proxmox nodes
+# Customize based on your network requirements
+
+# Loopback interface
+auto lo
+iface lo inet loopback
+
+# =============================================================================
+# MANAGEMENT INTERFACE (Primary)
+# =============================================================================
+
+# Primary management interface
+auto {{ ansible_default_ipv4.interface | default('eth0') }}
+iface {{ ansible_default_ipv4.interface | default('eth0') }} inet static
+    address {{ ansible_default_ipv4.address | default('10.144.0.2') }}/24
+    gateway {{ ansible_default_ipv4.gateway | default('10.144.0.1') }}
+    dns-nameservers {{ dns_servers | default('8.8.8.8 8.8.4.4') | join(' ') }}
+    dns-search {{ dns_search_domains | default('local') }}
+    # MTU optimization for Proxmox
+    mtu 1500
+
+# =============================================================================
+# BRIDGE INTERFACES (for VMs)
+# =============================================================================
+
+# Default VM bridge (NAT/Bridged networking)
+auto vmbr0
+iface vmbr0 inet static
+    address {{ vm_bridge_ip | default('192.168.100.1') }}/24
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    # Enable IP forwarding for VM networking
+    post-up echo 1 > /proc/sys/net/ipv4/ip_forward
+    # NAT configuration for VM internet access
+    post-up iptables -t nat -A POSTROUTING -s '192.168.100.0/24' -o {{ ansible_default_ipv4.interface | default('eth0') }} -j MASQUERADE
+    post-down iptables -t nat -D POSTROUTING -s '192.168.100.0/24' -o {{ ansible_default_ipv4.interface | default('eth0') }} -j MASQUERADE
+
+# Bridged interface (VMs get IPs from main network)
+auto vmbr1
+iface vmbr1 inet manual
+    bridge-ports {{ ansible_default_ipv4.interface | default('eth0') }}
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+
+# =============================================================================
+# VLAN INTERFACES (Optional)
+# =============================================================================
+
+# VLAN for isolated networks
+# auto vmbr2
+# iface vmbr2 inet static
+#     address 10.10.0.1/24
+#     bridge-ports none
+#     bridge-stp off
+#     bridge-fd 0
+#     bridge-vlan-aware yes
+#     # VLAN 10 for development VMs
+#     bridge-vids 10
+
+# VLAN for production VMs  
+# auto vmbr3
+# iface vmbr3 inet static
+#     address 10.20.0.1/24
+#     bridge-ports none
+#     bridge-stp off
+#     bridge-fd 0
+#     bridge-vlan-aware yes
+#     # VLAN 20 for production VMs
+#     bridge-vids 20
+
+# =============================================================================
+# STORAGE/CLUSTER NETWORK (Optional)
+# =============================================================================
+
+# Dedicated network for Ceph/cluster traffic
+# auto {{ cluster_interface | default('eth1') }}
+# iface {{ cluster_interface | default('eth1') }} inet static
+#     address {{ cluster_ip | default('10.0.1.2') }}/24
+#     mtu 9000  # Jumbo frames for storage performance
+#     # No gateway - storage traffic only
+
+# Storage bridge for NFS/iSCSI access
+# auto vmbr10
+# iface vmbr10 inet static
+#     address {{ storage_bridge_ip | default('10.0.2.1') }}/24
+#     bridge-ports {{ storage_interface | default('eth2') }}
+#     bridge-stp off
+#     bridge-fd 0
+#     mtu 9000
+
+# =============================================================================
+# BONDING/REDUNDANCY (Optional)
+# =============================================================================
+
+# Network bonding for redundancy
+# auto bond0
+# iface bond0 inet manual
+#     bond-slaves {{ bond_interfaces | default('eth0 eth1') | join(' ') }}
+#     bond-mode {{ bond_mode | default('active-backup') }}
+#     bond-miimon 100
+#     bond-downdelay 200
+#     bond-updelay 200
+
+# Bridge on bonded interface
+# auto vmbr0
+# iface vmbr0 inet static
+#     address {{ management_ip | default('10.144.0.2') }}/24
+#     gateway {{ management_gateway | default('10.144.0.1') }}
+#     bridge-ports bond0
+#     bridge-stp off
+#     bridge-fd 0
+
+# =============================================================================
+# OPENVSWITCH (Advanced Networking)
+# =============================================================================
+
+# OVS bridge for advanced networking features
+# auto vmbr-ovs
+# iface vmbr-ovs inet manual
+#     ovs_type OVSBridge
+#     ovs_ports {{ ovs_ports | default('eth1') }}
+
+# =============================================================================
+# FIREWALL RULES (Basic)
+# =============================================================================
+
+# Basic iptables rules are applied via post-up/post-down
+# For advanced firewall configuration, use Proxmox GUI or dedicated firewall role
+
+# Allow SSH access
+# post-up iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+# Allow Proxmox web interface
+# post-up iptables -A INPUT -p tcp --dport 8006 -j ACCEPT
+# Allow cluster communication (if clustering enabled)
+# post-up iptables -A INPUT -p tcp --dport 5404:5405 -j ACCEPT
+# post-up iptables -A INPUT -p udp --dport 5404:5405 -j ACCEPT
