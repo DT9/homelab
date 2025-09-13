@@ -1,0 +1,179 @@
+# =============================================================================
+# CEPH STORAGE CONFIGURATION
+# =============================================================================
+
+# Enable Ceph storage (requires cluster)
+pve_ceph_enabled: false
+
+# =============================================================================
+# CEPH CLUSTER CONFIGURATION (MULTI-NODE ONLY)
+# =============================================================================
+
+# Ceph requires minimum 3 nodes for production
+# pve_ceph_enabled: true
+# pve_ceph_cluster_network: "10.0.1.0/24"  # Dedicated Ceph network
+# pve_ceph_public_network: "10.0.0.0/24"   # Public/client network
+
+# =============================================================================
+# CEPH MONITORS (MONs)
+# =============================================================================
+
+# pve_ceph_mons:
+#   - "{{ inventory_hostname }}"  # This node as monitor
+#   # Add other nodes:
+#   # - "pve02"
+#   # - "pve03"
+
+# =============================================================================
+# CEPH MANAGERS (MGRs) 
+# =============================================================================
+
+# pve_ceph_mgrs:
+#   - "{{ inventory_hostname }}"
+#   # - "pve02"  # Additional managers
+
+# =============================================================================
+# CEPH OSDs (Object Storage Daemons)
+# =============================================================================
+
+# pve_ceph_osds:
+#   # Dedicated SSD/NVMe disks for Ceph
+#   - device: "/dev/sdb"
+#     class: "ssd"           # ssd, hdd, or nvme
+#     journal_size: "10G"    # Journal size (SSD recommended)
+#   
+#   - device: "/dev/sdc" 
+#     class: "ssd"
+#     journal_size: "10G"
+#   
+#   - device: "/dev/sdd"
+#     class: "hdd"
+#     journal_size: "5G"
+
+# =============================================================================
+# CEPH CRUSH RULES
+# =============================================================================
+
+# pve_ceph_crush_rules:
+#   - name: "ssd-replicated"
+#     type: "replicated"
+#     class: "ssd"
+#     min_size: 2
+#     max_size: 3
+#   
+#   - name: "hdd-replicated" 
+#     type: "replicated"
+#     class: "hdd"
+#     min_size: 2
+#     max_size: 3
+
+# =============================================================================
+# CEPH POOLS
+# =============================================================================
+
+# pve_ceph_pools:
+#   # VM disk pool (SSD for performance)
+#   - name: "vm-disks"
+#     size: 128              # Number of placement groups
+#     min_size: 2            # Minimum replicas
+#     crush_rule: "ssd-replicated"
+#     application: "rbd"     # RADOS Block Device
+#   
+#   # Backup pool (HDD for capacity)
+#   - name: "vm-backups"
+#     size: 64
+#     min_size: 2
+#     crush_rule: "hdd-replicated" 
+#     application: "rbd"
+#   
+#   # CephFS metadata pool
+#   - name: "cephfs-metadata"
+#     size: 32
+#     min_size: 2
+#     crush_rule: "ssd-replicated"
+#     application: "cephfs"
+#   
+#   # CephFS data pool  
+#   - name: "cephfs-data"
+#     size: 128
+#     min_size: 2
+#     crush_rule: "hdd-replicated"
+#     application: "cephfs"
+
+# =============================================================================
+# CEPH FILESYSTEMS (CephFS)
+# =============================================================================
+
+# pve_ceph_fs:
+#   - name: "shared-storage"
+#     metadata_pool: "cephfs-metadata"
+#     data_pool: "cephfs-data"
+#     mount_point: "/mnt/cephfs"
+#     mount_options: "noatime,_netdev"
+
+# =============================================================================
+# CEPH STORAGE IN PROXMOX
+# =============================================================================
+
+# Configure Ceph storage in Proxmox GUI
+# pve_storages:
+#   - name: "ceph-vm-disks"
+#     type: "rbd"
+#     pool: "vm-disks" 
+#     content: ["images", "rootdir"]
+#     nodes: ["pve01", "pve02", "pve03"]
+#     krbd: 1                # Use kernel RBD
+#   
+#   - name: "ceph-backups"
+#     type: "rbd"
+#     pool: "vm-backups"
+#     content: ["backup"]
+#     nodes: ["pve01", "pve02", "pve03"]
+#   
+#   - name: "cephfs-shared"
+#     type: "cephfs"
+#     content: ["snippets", "backup", "iso"]
+#     nodes: ["pve01", "pve02", "pve03"]
+#     fs_name: "shared-storage"
+
+# =============================================================================
+# CEPH PERFORMANCE TUNING
+# =============================================================================
+
+# pve_ceph_conf_overrides:
+#   global:
+#     # Network optimization
+#     ms_type: "async+posix"
+#     ms_async_op_threads: 5
+#     
+#     # Performance tuning
+#     osd_op_queue: "wpq"           # Work-preserving queue
+#     osd_op_queue_cut_off: "high"
+#   
+#   osd:
+#     # SSD optimizations
+#     osd_max_backfills: 1
+#     osd_recovery_max_active: 1
+#     osd_snap_trim_sleep: 0.1
+#   
+#   client:
+#     # RBD cache settings
+#     rbd_cache: true
+#     rbd_cache_size: 67108864     # 64MB cache
+#     rbd_cache_writethrough_until_flush: false
+
+# =============================================================================
+# CEPH MONITORING
+# =============================================================================
+
+# pve_ceph_dashboard_enabled: true
+# pve_ceph_dashboard_ssl: true
+# pve_ceph_dashboard_port: 8443
+
+# =============================================================================
+# SINGLE NODE DEVELOPMENT (NOT RECOMMENDED FOR PRODUCTION)
+# =============================================================================
+
+# For testing/development only - breaks Ceph reliability
+# pve_ceph_allow_single_node: true  # DANGEROUS: Only for testing!
+# pve_ceph_replica_size: 1          # DANGEROUS: No redundancy!

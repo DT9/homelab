@@ -1,0 +1,193 @@
+# =============================================================================
+# MONITORING AND BACKUP CONFIGURATION  
+# =============================================================================
+
+# =============================================================================
+# METRIC SERVERS (MONITORING INTEGRATION)
+# =============================================================================
+
+pve_metric_servers:
+  # InfluxDB integration (for Grafana dashboards)
+  - id: "influxdb-main"
+    server: "monitoring.local"
+    port: 8086
+    type: "influxdb"
+    token: "{{ vault_influxdb_token }}"
+    organization: "homelab"
+    bucket: "proxmox-metrics"
+    # verify-certificate: 0  # Disable for self-signed certs
+#   
+#   # Graphite integration (alternative to InfluxDB)
+#   - id: "graphite-main"
+#     server: "graphite.local"
+#     port: 2003
+#     type: "graphite"
+#     path: "proxmox.{{ inventory_hostname }}"
+#   
+#   # Prometheus Node Exporter format
+#   - id: "prometheus-main"
+#     server: "prometheus.local"
+#     port: 9100
+#     type: "prometheus"
+#     path: "/pve"
+
+# =============================================================================
+# BACKUP CONFIGURATION
+# =============================================================================
+
+# External backup storage
+# pve_storages:
+#   # NFS backup storage
+#   - name: "backup-nfs"
+#     type: "nfs"
+#     server: "nas.local"
+#     export: "/volume1/proxmox-backup"
+#     content: ["backup"]
+#     options: "vers=3"
+#     maxfiles: 7  # Keep 7 backup files
+#   
+#   # SMB/CIFS backup storage
+#   - name: "backup-smb"
+#     type: "cifs"
+#     server: "fileserver.local"
+#     share: "proxmox-backups"
+#     content: ["backup"]
+#     username: "backup-user"
+#     # password stored in vault file
+#     options: "vers=3.0"
+#     maxfiles: 14
+#   
+#   # PBS (Proxmox Backup Server)
+#   - name: "pbs-main"
+#     type: "pbs"
+#     server: "pbs.local"
+#     datastore: "datastore1"
+#     content: ["backup"]
+#     username: "backup@pbs"
+#     # password/api-token in vault
+#     fingerprint: "SHA256:fingerprint-here"
+
+# =============================================================================
+# NOTIFICATION SETTINGS
+# =============================================================================
+
+# Email notifications
+pve_datacenter_cfg:
+  email_from: "proxmox@{{ inventory_hostname }}.local"
+  notify:
+    package-updates: "mailto:{{ pve_notification_email }}"
+    replication: "mailto:{{ pve_notification_email }}"
+    fencing: "mailto:{{ pve_notification_email }}"
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+# Syslog forwarding (for centralized logging)
+pve_syslog_servers:
+  - server: "logs.local"
+    port: 514
+    protocol: "udp"
+    facility: "daemon"
+
+# =============================================================================
+# SNMP MONITORING
+# =============================================================================
+
+# SNMP configuration for network monitoring
+# pve_snmp_enabled: true
+# pve_snmp_community: "public"
+# pve_snmp_contact: "admin@example.com"
+# pve_snmp_location: "Datacenter Rack 1"
+# pve_snmp_allowed_hosts:
+#   - "monitoring.local"
+#   - "10.0.1.100"
+
+# =============================================================================
+# PERFORMANCE MONITORING
+# =============================================================================
+
+# Built-in Proxmox statistics
+# pve_rrd_enabled: true  # RRD database for historical data
+# pve_rrd_retention:
+#   hour: 70      # Keep hourly data for 70 hours
+#   day: 35       # Keep daily data for 35 days  
+#   week: 10      # Keep weekly data for 10 weeks
+#   month: 12     # Keep monthly data for 12 months
+#   year: 10      # Keep yearly data for 10 years
+
+# =============================================================================
+# EXTERNAL MONITORING TOOLS INTEGRATION
+# =============================================================================
+
+# Node Exporter for Prometheus (install separately)
+# pve_extra_packages:
+#   - prometheus-node-exporter
+#   - collectd  # Alternative metrics collector
+
+# Telegraf configuration (for InfluxDB)
+# telegraf_config:
+#   global_tags:
+#     environment: "homelab"
+#     datacenter: "home"
+#   
+#   inputs:
+#     - cpu: {}
+#     - disk: {}
+#     - mem: {}
+#     - net: {}
+#     - system: {}
+#     - proxmox:
+#         base_url: "https://{{ inventory_hostname }}:8006/api2/json"
+#         username: "monitoring@pve"
+#         # token in vault file
+
+# =============================================================================
+# ALERTING CONFIGURATION
+# =============================================================================
+
+# Webhook notifications (for Discord, Slack, etc.)
+# pve_notification_targets:
+#   - name: "discord-alerts"
+#     type: "webhook"
+#     url: "https://discord.com/api/webhooks/your-webhook-url"
+#     headers:
+#       Content-Type: "application/json"
+#   
+#   - name: "slack-alerts"
+#     type: "webhook" 
+#     url: "https://hooks.slack.com/services/your-webhook-url"
+#     headers:
+#       Content-Type: "application/json"
+
+# =============================================================================
+# MAINTENANCE WINDOWS
+# =============================================================================
+
+# Define maintenance schedules
+pve_maintenance_windows:
+  - name: "security-updates"
+    schedule: "0 3 * * 1"  # Monday 3 AM
+    duration: "2h"
+    description: "Weekly security updates"
+    commands:
+      - "apt update && apt upgrade -y"
+      - "rkhunter --update && rkhunter --check --skip-keypress"
+      
+  - name: "system-cleanup"
+    schedule: "0 4 1 * *"  # First of month 4 AM
+    duration: "1h" 
+    description: "Monthly system cleanup"
+    commands:
+      - "apt autoremove -y"
+      - "apt autoclean"
+      - "journalctl --vacuum-time=30d"
+      
+# Configure logrotate:
+logrotate_configs:
+  - name: "proxmox"
+    path: "/var/log/pve/*.log"
+    rotate: 4
+    weekly: true
+    compress: true
+    delaycompress: true

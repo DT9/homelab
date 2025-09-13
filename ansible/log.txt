@@ -1,0 +1,217 @@
+
+PLAY [Install and configure single-node Proxmox VE] ****************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [pve01]
+
+TASK [lae.proxmox : Gather distribution specific variables] ********************
+ok: [pve01]
+
+TASK [lae.proxmox : Ensure pve_cluster_addr0 is in the host facts] *************
+ok: [pve01]
+
+TASK [lae.proxmox : Calculate list of SSH addresses] ***************************
+ok: [pve01]
+
+TASK [lae.proxmox : Gather package facts] **************************************
+ok: [pve01]
+
+TASK [lae.proxmox : Ensure that facts are present for all cluster hosts] *******
+skipping: [pve01]
+
+TASK [lae.proxmox : Ensure that group has more than one host to enable PVE clustering] ***
+skipping: [pve01]
+
+TASK [lae.proxmox : Ensure this host is in the group specified] ****************
+skipping: [pve01]
+
+TASK [lae.proxmox : Create SSH directory for root] *****************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Create root SSH key pair for PVE] **************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Fetch root SSH public key] *********************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Authorize all hosts' root SSH public keys] *****************
+skipping: [pve01]
+
+TASK [lae.proxmox : Configure SSH clients for connecting to PVE cluster hosts] ***
+skipping: [pve01]
+
+TASK [lae.proxmox : Ensure SSH config directory exists] ************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Allow root logins from PVE cluster hosts] ******************
+skipping: [pve01]
+
+TASK [lae.proxmox : Remove SSH configuration from main sshd_config if present in favor of config in sshd_config.d] ***
+skipping: [pve01]
+
+TASK [lae.proxmox : Enable and start SSH server] *******************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Fetch a SSH public key to use for cluster joins] ***********
+skipping: [pve01]
+
+TASK [lae.proxmox : Add PVE-provided ciphers to SSH client config] *************
+skipping: [pve01]
+
+TASK [lae.proxmox : Run handlers if needed (ssh server reload)] ****************
+
+TASK [lae.proxmox : Enumerate all cluster hosts within the hosts file] *********
+skipping: [pve01]
+
+TASK [lae.proxmox : Remove conflicting lines in hosts files] *******************
+skipping: [pve01]
+
+TASK [lae.proxmox : Define hostname in /etc/hosts for single-host installations] ***
+ok: [pve01]
+
+TASK [lae.proxmox : Ensure gpg is installed] ***********************************
+ok: [pve01]
+
+TASK [lae.proxmox : Trust Proxmox' packaging key on Debian < 12] ***************
+skipping: [pve01]
+
+TASK [lae.proxmox : Trust Proxmox' packaging key on Debian 12] *****************
+ok: [pve01]
+
+TASK [lae.proxmox : Remove os-prober package] **********************************
+ok: [pve01]
+
+TASK [lae.proxmox : Remove automatically installed PVE Enterprise repo configuration] ***
+ok: [pve01] => (item=deb https://enterprise.proxmox.com/debian bookworm pve-enterprise)
+ok: [pve01] => (item=deb https://enterprise.proxmox.com/debian/pve bookworm pve-enterprise)
+ok: [pve01] => (item=deb https://enterprise.proxmox.com/debian/ceph-quincy bookworm enterprise)
+
+TASK [lae.proxmox : Add Proxmox repository] ************************************
+ok: [pve01]
+
+TASK [lae.proxmox : Add Proxmox Ceph repository] *******************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Run apt-get dist-upgrade on repository changes] ************
+skipping: [pve01]
+
+TASK [lae.proxmox : Perform system upgrades] ***********************************
+ok: [pve01]
+
+TASK [lae.proxmox : Stage packages needed for base PVE installation] ***********
+ok: [pve01]
+
+TASK [lae.proxmox : Stage ZFS packages if ZFS is enabled] **********************
+skipping: [pve01]
+
+TASK [lae.proxmox : Stage Ceph packages if Ceph is enabled] ********************
+skipping: [pve01]
+
+TASK [lae.proxmox : Stage any extra packages the user has specified] ***********
+ok: [pve01]
+
+TASK [lae.proxmox : Pin Proxmox kernel to specific version] ********************
+skipping: [pve01]
+
+TASK [lae.proxmox : Ensure preferences exist for kernel pinning only if needed] ***
+ok: [pve01]
+
+TASK [lae.proxmox : Install Proxmox VE and related packages] *******************
+ok: [pve01]
+
+TASK [lae.proxmox : Remove automatically installed PVE Enterprise repo configuration] ***
+ok: [pve01] => (item=deb https://enterprise.proxmox.com/debian bookworm pve-enterprise)
+ok: [pve01] => (item=deb https://enterprise.proxmox.com/debian/pve bookworm pve-enterprise)
+ok: [pve01] => (item=deb https://enterprise.proxmox.com/debian/ceph-quincy bookworm enterprise)
+
+TASK [lae.proxmox : Remove subscription check wrapper function in web UI] ******
+skipping: [pve01]
+
+TASK [lae.proxmox : Modify vfio IOMMU references and configuration in default grub] ***
+skipping: [pve01]
+
+TASK [lae.proxmox : Specify vfio configuration options] ************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Blacklist drivers from host] *******************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Specify kvm configuration options] *************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Enable IOMMU Interrupt Remapping] **************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Modify modules list for PCIe Passthrough] ******************
+skipping: [pve01]
+
+TASK [lae.proxmox : Modify modules list for GVT-g] *****************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Check for kernel update] ***********************************
+ok: [pve01]
+
+TASK [lae.proxmox : Reboot for kernel update] **********************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Collect kernel package information] ************************
+ok: [pve01]
+
+TASK [lae.proxmox : Remove old Debian/PVE kernels] *****************************
+ok: [pve01]
+
+TASK [lae.proxmox : Unload nmi_watchdog] ***************************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Attempt to unload softdog live] ****************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Stop watchdog-mux] *****************************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Unload softdog] ********************************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Disable nmi_watchdog via GRUB config] **********************
+skipping: [pve01]
+
+TASK [lae.proxmox : Load ipmi_watchdog module] *********************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Configure ipmi_watchdog module to load on boot] ************
+skipping: [pve01]
+
+TASK [lae.proxmox : Configure PVE HA Manager to use ipmi_watchdog] *************
+skipping: [pve01]
+
+TASK [lae.proxmox : Load ZFS module live] **************************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Load ZFS module on init] ***********************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Copy ZFS modprobe configuration] ***************************
+skipping: [pve01]
+
+TASK [lae.proxmox : Configure email address for ZFS event daemon notifications] ***
+skipping: [pve01]
+
+TASK [lae.proxmox : HOOK - Run ZFS post-install hook tasks] ********************
+skipping: [pve01]
+
+TASK [lae.proxmox : Remove ZFS modprobe configuration] *************************
+ok: [pve01]
+
+TASK [lae.proxmox : Disable loading of ZFS module on init] *********************
+ok: [pve01]
+
+TASK [lae.proxmox : ensure valid watchdog] *************************************
+ok: [pve01]
+
+TASK [lae.proxmox : Re-enable nmi_watchdog via GRUB config] ********************
+ok: [pve01]
+
+TASK [lae.proxmox : Remove ipmi_watchdog modprobe configuration] ***************
+ok: [pve01]
+
+TASK [lae.proxmox : Load watchdog driver] **************************************

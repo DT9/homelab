@@ -1,0 +1,6 @@
+---
+collections:
+  - name: infisical.vault
+  - name: artis3n.tailscale
+  - name: community.general
+  - name: community.sops

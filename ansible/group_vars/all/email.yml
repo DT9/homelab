@@ -1,0 +1,7 @@
+---
+# Postfix configuration for Gmail relay
+pve_postfix_relayhost: "[smtp.gmail.com]:587"
+pve_postfix_sasl_auth_enable: "yes"
+pve_postfix_sasl_password_maps: "hash:/etc/postfix/sasl_passwd"
+pve_postfix_use_tls: "yes"
+pve_postfix_sasl_passwd_file_content: "[smtp.gmail.com]:587 {{ pve_notification_email }}:{{ vault_gmail_app_password }}"

@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate Infisical secrets are present
+      assert:
+        that:
+          - infisical_secret_map is mapping
+          - "'ZT_NETWORK_ID' in infisical_secret_map"
+        fail_msg: "Infisical secret map is missing expected values"
+
+    - name: Display ZeroTier network secret
+      debug:
+        msg: "ZT_NETWORK_ID characters: {{ infisical_secret_map['ZT_NETWORK_ID'] }}"

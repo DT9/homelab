@@ -1,0 +1,14 @@
+#!ipxe
+menu select OS
+item --key d debian debian
+item --key n netboot netboot
+choose --timeout 15000 --default debian selected || shell
+goto ${selected}
+:debian
+kernel http://deb.debian.org/debian/dists/bookworm/main/installer-amd64/current/images/netboot/debian-installer/amd64/linux auto=true priority=critical preseed/url=http://10.10.0.1/preseed.cfg
+initrd http://deb.debian.org/debian/dists/bookworm/main/installer-amd64/current/images/netboot/debian-installer/amd64/initrd.gz
+boot || shell
+:netboot
+chain --autofree https://boot.netboot.xyz/menu.ipxe || shell
+
+

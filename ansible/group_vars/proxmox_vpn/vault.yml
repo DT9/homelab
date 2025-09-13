@@ -1,0 +1,5 @@
+---
+# Shared VPN credentials for Proxmox nodes.
+vault_zerotier_network_id: "{{ infisical_secret_map['ZT_NETWORK_ID'] | mandatory }}"
+vault_zerotier_api_token: "{{ infisical_secret_map['ZT_API_TOKEN'] | mandatory }}"
+vault_tailscale_auth_key: "{{ infisical_secret_map.get('TS_AUTH_KEY') | default('', true) }}"

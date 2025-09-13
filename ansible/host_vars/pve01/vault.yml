@@ -1,0 +1,7 @@
+---
+# Secrets specific to the pve01 inventory group fetched from Infisical.
+vault_influxdb_token: "{{ infisical_secret_map['INFLUX_TOKEN'] | mandatory }}"
+vault_gmail_app_password: "{{ infisical_secret_map['GMAIL_APP_PASSWORD'] | mandatory }}"
+vault_pbs_password: "{{ infisical_secret_map['PBS_PASSWORD'] | mandatory }}"
+vault_pbs_fingerprint: "{{ infisical_secret_map['PBS_FINGERPRINT'] | mandatory }}"
+vault_pveadmin_password: "{{ infisical_secret_map['PVE_ADMIN_PASSWORD'] | mandatory }}"

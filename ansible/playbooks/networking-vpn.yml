@@ -1,0 +1,77 @@
+---
+- name: Setup ZeroTier and Tailscale VPN networking
+  hosts: proxmox
+  become: true
+  vars:
+    # ZeroTier configuration
+    zerotier_network_id: "{{ vault_zerotier_network_id | default('') }}"
+    zerotier_api_accesstoken: "{{ vault_zerotier_api_token | default('') }}"
+    
+    # Tailscale configuration  
+    tailscale_auth_key: "{{ vault_tailscale_auth_key | default('') }}"
+    tailscale_authkey: "{{ tailscale_auth_key }}"
+    
+    # Enable both or choose one
+    install_zerotier: true
+    install_tailscale: true
+
+  pre_tasks:
+    - name: Warn when ZeroTier network ID is missing
+      when:
+        - install_zerotier
+        - zerotier_network_id | length == 0
+      debug:
+        msg: "ZeroTier network ID is empty; skip ZeroTier role by setting install_zerotier: false or define vault_zerotier_network_id."
+
+    - name: Warn when Tailscale auth key is missing
+      when:
+        - install_tailscale
+        - tailscale_authkey | length == 0
+      debug:
+        msg: "Tailscale auth key is empty; skip Tailscale role by setting install_tailscale: false or define vault_tailscale_auth_key."
+
+  roles:
+    - role: m4rcu5nl.zerotier-one
+      when:
+        - install_zerotier
+        - zerotier_network_id | length > 0
+    - role: artis3n.tailscale.machine
+      when:
+        - install_tailscale
+        - tailscale_authkey | length > 0
+      vars:
+        tailscale_args: "--reset"
+
+  tasks:
+    # Network configuration for VPN access to Proxmox
+    - name: Configure firewall for VPN access
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+        comment: "Proxmox VPN access"
+      loop:
+        - "8006"  # Proxmox web interface
+        - "22"    # SSH
+      ignore_errors: yes
+
+    - name: Enable IP forwarding for VPN routing
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        state: present
+        reload: yes
+
+    - name: Configure Proxmox to listen on all interfaces
+      lineinfile:
+        path: /etc/default/pveproxy
+        regexp: '^LISTEN_IP='
+        line: 'LISTEN_IP="0.0.0.0"'
+        create: yes
+      notify: restart pveproxy
+
+  handlers:
+    - name: restart pveproxy
+      systemd:
+        name: pveproxy
+        state: restarted

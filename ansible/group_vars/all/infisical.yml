@@ -1,0 +1,14 @@
+---
+# Shared Infisical configuration; ensure all required environment variables are present.
+infisical_project_id: "{{ lookup('env', 'INFISICAL_PROJECT_ID') | mandatory }}"
+infisical_env_slug: "{{ lookup('env', 'INFISICAL_ENV_SLUG') | mandatory }}"
+infisical_secret_path: "{{ lookup('env', 'INFISICAL_PATH') | mandatory }}"
+infisical_client_id: "{{ lookup('env', 'INFISICAL_CLIENT_ID') | default(lookup('env', 'UNIVERSAL_AUTH_CLIENT_ID'), true) | mandatory('Missing INFISICAL_CLIENT_ID (or UNIVERSAL_AUTH_CLIENT_ID) environment variable.') }}"
+infisical_client_secret: "{{ lookup('env', 'INFISICAL_CLIENT_SECRET') | default(lookup('env', 'UNIVERSAL_AUTH_CLIENT_SECRET'), true) | mandatory('Missing INFISICAL_CLIENT_SECRET (or UNIVERSAL_AUTH_CLIENT_SECRET) environment variable.') }}"
+_infisical_api_raw: "{{ lookup('env', 'INFISICAL_API_URL') | default('https://app.infisical.com', true) }}"
+infisical_api_url: "{{ _infisical_api_raw | regex_replace('/+$', '') | regex_replace('/api$', '') }}"
+
+# Fetch secrets once and expose them as a simple map for group-specific vars.
+_infisical_secret_results: "{{ lookup('infisical.vault.read_secrets', project_id=infisical_project_id, env_slug=infisical_env_slug, path=infisical_secret_path, url=infisical_api_url, universal_auth_client_id=infisical_client_id, universal_auth_client_secret=infisical_client_secret, as_dict=True) }}"
+_infisical_secret_map_raw: "{{ _infisical_secret_results if _infisical_secret_results is mapping else (_infisical_secret_results | first | default(omit)) }}"
+infisical_secret_map: "{{ _infisical_secret_map_raw | mandatory('Infisical lookup returned no data; verify project, environment, path, and credentials.') }}"
