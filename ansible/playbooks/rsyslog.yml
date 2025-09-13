@@ -1,0 +1,19 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Create rsyslog remote config
+      ansible.builtin.copy:
+        content: "*.* @@logs.local:514"
+        dest: /etc/rsyslog.d/50-proxmox-remote.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify:
+        - restart rsyslog
+
+  handlers:
+    - name: restart rsyslog
+      ansible.builtin.service:
+        name: rsyslog
+        state: restarted

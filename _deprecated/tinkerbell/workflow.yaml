@@ -1,0 +1,10 @@
+apiVersion: tinkerbell.org/v1alpha1
+kind: Workflow
+metadata:
+  name: debian-minimal-workflow
+  namespace: tinkerbell
+spec:
+  templateRef: debian-minimal
+  hardwareRef: debian-node
+  hardwareMap:
+    device_1: "00:11:22:33:44:55"

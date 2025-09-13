@@ -1,0 +1,58 @@
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+
+# Storage definitions
+pve_storages:
+  # PBS backup storage (configure after PBS installation)
+  - name: "pbs-backup"
+    type: "pbs"
+    server: "pbs.homelab.local"           # PBS server hostname/IP
+    datastore: "backup-store"             # PBS datastore name  
+    content: ["backup"]
+    username: "proxmox@pbs"               # PBS user account
+    password: "{{ vault_pbs_password }}"  # From vault
+    fingerprint: "{{ vault_pbs_fingerprint }}"  # PBS certificate fingerprint
+    
+  # LVM-Thin storage for VMs (primary storage)
+  - name: "local-lvm"
+    type: "lvmthin"
+    vgname: "pve"                         # Default VG created during install
+    thinpool: "data"                      # Default thin pool
+    content: ["images", "rootdir"]        # VM disks and container filesystems
+    nodes: ["{{ inventory_hostname }}"]
+    
+  # ISO storage for installation media
+  - name: "iso-storage"
+    type: "dir"
+    path: "/var/lib/vz/template/iso"
+    content: ["iso"]
+    maxfiles: 10
+    
+  # Container template storage
+  - name: "vztmpl-storage"
+    type: "dir"
+    path: "/var/lib/vz/template/cache"
+    content: ["vztmpl"]
+
+# =============================================================================
+# NETWORK BRIDGE CONFIGURATION
+# =============================================================================
+
+pve_network_bridges:
+  - name: "vmbr0"
+    address: "10.144.0.2/24"
+    gateway: "10.144.0.1"
+    bridge_ports: "eth0"
+    comment: "Main VM bridge"
+    
+  - name: "vmbr1"  
+    address: "192.168.100.1/24"
+    comment: "Internal VM network"
+    bridge_ports: "none"
+    
+# Configure VLAN if needed:
+#   - name: "vmbr0.100"
+#     vlan_id: 100
+#     address: "10.100.0.2/24"
+#     comment: "VLAN 100 for guests"

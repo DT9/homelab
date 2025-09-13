@@ -1,0 +1,12 @@
+---
+- name: Install and configure single-node Proxmox VE
+  hosts: pve01
+  become: true
+  # All configuration moved to group_vars files
+  # See group_vars/all/main.yml and group_vars/pve01/*.yml
+    
+  roles:
+    - lae.proxmox
+
+- import_playbook: playbooks/postfix.yml
+- import_playbook: playbooks/ntp.yml
