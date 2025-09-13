@@ -1,0 +1,8 @@
+vault_influxdb_token: "{{ lookup('env', 'INFLUX_TOKEN') | mandatory }}"
+vault_gmail_app_password: "{{ lookup('env', 'GMAIL_APP_PASSWORD') | mandatory }}"
+vault_pbs_password: "{{ lookup('env', 'PBS_PASSWORD') | mandatory }}"
+vault_pbs_fingerprint: "{{ lookup('env', 'PBS_FINGERPRINT') | mandatory }}"
+vault_pveadmin_password: "{{ lookup('env', 'PVE_ADMIN_PASSWORD') | mandatory }}"
+vault_zerotier_network_id: "{{ lookup('env', 'ZT_NETWORK_ID') | mandatory }}"
+vault_zerotier_api_token: "{{ lookup('env', 'ZT_API_TOKEN') | mandatory }}"
+vault_tailscale_auth_key: "{{ lookup('env', 'TS_AUTH_KEY') | default('', true) }}"

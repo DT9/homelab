@@ -1,0 +1,10 @@
+---
+# Non-encrypted vault variables template (copy to vault.yml and fill values)
+vault_influxdb_token: "your_influxdb_token_here"
+vault_gmail_app_password: "your_gmail_app_password_here"
+vault_pbs_password: "your_pbs_user_password_here"
+vault_pbs_fingerprint: "SHA256:your_pbs_server_fingerprint_here"
+vault_pveadmin_password: "your_pveadmin_password_here"
+vault_zerotier_network_id: "your_zerotier_network_id_here"
+vault_zerotier_api_token: "your_zerotier_api_token_here"
+vault_tailscale_auth_key: "your_tailscale_auth_key_here"

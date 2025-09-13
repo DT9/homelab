@@ -1,0 +1,47 @@
+---
+- name: Install and enable Jamesits/pve-fake-subscription
+  hosts: pve01
+  become: true
+  gather_facts: true
+
+  vars:
+    pve_fake_sub_deb_url: "https://github.com/Jamesits/pve-fake-subscription/releases/download/v0.0.11/pve-fake-subscription_0.0.11+git-1_all.deb"
+    pve_fake_sub_deb_path: "/root/pve-fake-subscription_0.0.11+git-1_all.deb"
+
+  tasks:
+    - name: Ensure prerequisites are installed
+      ansible.builtin.package:
+        name:
+          - curl
+          - ca-certificates
+        state: present
+
+    - name: Check if pve-fake-subscription is already installed
+      ansible.builtin.shell: "dpkg -l | awk '{print $2}' | grep -xq 'pve-fake-subscription'"
+      register: pve_fake_sub_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Download pve-fake-subscription .deb
+      ansible.builtin.get_url:
+        url: "{{ pve_fake_sub_deb_url }}"
+        dest: "{{ pve_fake_sub_deb_path }}"
+        mode: "0644"
+        validate_certs: true
+      when: not pve_fake_sub_installed.rc == 0
+
+    - name: Install pve-fake-subscription package
+      ansible.builtin.apt:
+        deb: "{{ pve_fake_sub_deb_path }}"
+        state: present
+      when: not pve_fake_sub_installed.rc == 0
+      register: pve_fake_sub_install
+
+    - name: Prevent fake keys from being checked against the Proxmox servers
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "127.0.0.1 shop.maurer-it.com"
+        state: present
+        create: yes
+        insertafter: EOF
+        backup: yes

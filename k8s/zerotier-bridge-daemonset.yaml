@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: zerotier-secrets
+  namespace: kube-system
+type: Opaque
+stringData:
+  ZT_NETWORK_IDS: "6ab565387a9084c1"
+  ZT_AUTHTOKEN: "zmosQXE2t1SIQ3HNlwDpEYet6xho3eMx"
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kubernetes-zerotier-bridge
+  namespace: kube-system
+  labels:
+    app: zerotier-bridge
+spec:
+  selector:
+    matchLabels:
+      app: zerotier-bridge
+  template:
+    metadata:
+      labels:
+        app: zerotier-bridge
+    spec:
+      hostNetwork: true
+      hostPID: true
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: zerotier-bridge
+        image: jakoberpf/zerotier-bridge:implement-caddy
+        imagePullPolicy: Always
+        env:
+        - name: ZT_NETWORK_IDS
+          valueFrom:
+            secretKeyRef:
+              name: zerotier-secrets
+              key: ZT_NETWORK_IDS
+        - name: ZT_AUTHTOKEN
+          valueFrom:
+            secretKeyRef:
+              name: zerotier-secrets
+              key: ZT_AUTHTOKEN
+        - name: AUTOJOIN
+          value: "true"
+        - name: ZTHOSTNAME
+          value: "k8s-zerotier-bridge"
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        volumeMounts:
+        - name: dev-net-tun
+          mountPath: /dev/net/tun
+        - name: zerotier-one
+          mountPath: /var/lib/zerotier-one
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "zerotier-cli info >/dev/null 2>&1"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "zerotier-cli listnetworks | grep OK >/dev/null 2>&1"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: dev-net-tun
+        hostPath:
+          path: /dev/net/tun
+          type: CharDevice
+      - name: zerotier-one
+        hostPath:
+          path: /var/lib/zerotier-one
+          type: DirectoryOrCreate
+      restartPolicy: Always
