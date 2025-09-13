@@ -1,0 +1,77 @@
+# =============================================================================
+# SSL CERTIFICATE CONFIGURATION
+# =============================================================================
+
+# =============================================================================
+# CUSTOM SSL CERTIFICATES
+# =============================================================================
+
+# Option 1: Use default self-signed certificates (recommended for homelab)
+# Proxmox will auto-generate self-signed certificates
+# No additional configuration needed
+
+# Option 1b: Custom certificates (if you have them)
+# pve_ssl_cert_file: "files/pve01/{{ inventory_hostname }}.crt"
+# pve_ssl_key_file: "files/pve01/{{ inventory_hostname }}.key"
+
+# Option 2: Use Let's Encrypt with ACME
+# pve_acme_account_email: "admin@example.com"
+# pve_acme_domains:
+#   - "proxmox.example.com"
+#   - "pve01.example.com"
+
+# =============================================================================
+# SSL CERTIFICATE FILES (if using custom certs)
+# =============================================================================
+
+# Expected file structure in files/pve01/:
+# ├── lab-node01.local.pem    # Full certificate chain
+# ├── lab-node01.local.key    # Private key
+# ├── lab-node02.local.pem
+# ├── lab-node02.local.key
+# └── lab-node03.local.pem
+#     lab-node03.local.key
+
+# Example configuration for multiple nodes:
+# pve_ssl_certificates:
+#   - name: "{{ inventory_hostname }}"
+#     cert_file: "files/pve01/{{ inventory_hostname }}.local.pem"
+#     key_file: "files/pve01/{{ inventory_hostname }}.local.key"
+
+# =============================================================================
+# ACME (Let's Encrypt) CONFIGURATION
+# =============================================================================
+
+# pve_acme_domains:
+#   - domain: "{{ inventory_hostname }}.example.com"
+#     plugin: "cloudflare"  # DNS-01 challenge
+#     api_data:
+#       CF_Token: "your-cloudflare-api-token"
+#       CF_Zone_ID: "your-zone-id"
+#   
+#   - domain: "proxmox.example.com"
+#     plugin: "standalone"  # HTTP-01 challenge (requires port 80)
+
+# =============================================================================
+# TLS/SSL SECURITY SETTINGS
+# =============================================================================
+
+# Advanced TLS configuration (optional)
+# pve_tls_ciphers: "ECDHE+AESGCM:ECDHE+AES256:ECDHE+AES128:!aNULL:!MD5:!DSS"
+# pve_tls_options: "NO_SSLv2,NO_SSLv3,NO_TLSv1,NO_TLSv1_1"
+
+# =============================================================================
+# CERTIFICATE EXAMPLES FOR DIFFERENT SCENARIOS
+# =============================================================================
+
+# Self-signed certificates (for development/testing)
+# The role can generate these automatically if no custom certs provided
+
+# Corporate CA certificates
+# pve_ssl_cert_file: "files/pve01/corporate-ca-signed.pem" 
+# pve_ssl_key_file: "files/pve01/corporate-ca-signed.key"
+# pve_ssl_ca_file: "files/pve01/corporate-ca.pem"  # CA certificate
+
+# Wildcard certificates
+# pve_ssl_cert_file: "files/pve01/wildcard.example.com.pem"
+# pve_ssl_key_file: "files/pve01/wildcard.example.com.key"

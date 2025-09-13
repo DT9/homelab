@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: true
+  vars:
+    postfix_maincf_settings:
+      - { parameter: 'relayhost', value: '{{ pve_postfix_relayhost }}' }
+      - { parameter: 'smtp_sasl_auth_enable', value: '{{ pve_postfix_sasl_auth_enable }}' }
+      - { parameter: 'smtp_sasl_password_maps', value: '{{ pve_postfix_sasl_password_maps }}' }
+      - { parameter: 'smtp_use_tls', value: '{{ pve_postfix_use_tls }}' }
+  roles:
+    - geerlingguy.postfix

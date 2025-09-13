@@ -1,0 +1,20 @@
+apiVersion: tinkerbell.org/v1alpha1
+kind: Hardware
+metadata:
+  name: debian-node
+  namespace: tinkerbell
+spec:
+  disks:
+    - device: /dev/sda
+  interfaces:
+    - dhcp:
+        mac: "9c:6b:00:93:c0:56"
+        hostname: "debian-node"
+        ip:
+          address: "10.144.0.101"
+          netmask: "255.255.0.0"
+          gateway: "10.144.0.1"
+          family: 4
+      netboot:
+        allowPXE: true
+        allowWorkflow: true
