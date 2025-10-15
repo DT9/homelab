@@ -1,28 +1,11 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
-if [[ -z "${INFISICAL_CLIENT_ID:-}" || -z "${INFISICAL_CLIENT_SECRET:-}" ]] && \
-   [[ -z "${INSTALL_ALL_DOTENVX:-}" ]] && \
-   command -v dotenvx >/dev/null 2>&1 && \
-   [[ -f "${SCRIPT_DIR}/.env" ]]; then
-  export INSTALL_ALL_DOTENVX=1
-  exec dotenvx run -- "$0" "$@"
-fi
-
 mkdir -p .ansible/tmp .ansible/cp roles collections
 
-if ! command -v uv >/dev/null 2>&1; then
-  echo "uv is required but not installed. Install it (e.g. curl -LsSf https://astral.sh/uv/install.sh | sh)." >&2
-  exit 1
-fi
-
-# Ensure the uv-managed virtual environment exists (skip by setting SKIP_UV_SYNC=1).
-if [[ -z "${SKIP_UV_SYNC:-}" ]]; then
-  uv sync
-fi
+uv sync
 
 export ANSIBLE_CONFIG="${SCRIPT_DIR}/ansible.cfg"
 export ANSIBLE_LOCAL_TEMP="${SCRIPT_DIR}/.ansible/tmp"
