@@ -30,3 +30,13 @@ curl -s https://install.zerotier.com | sudo bash
 sudo zerotier-cli join 6ab565387a9084c1
 
 curl -fsSL https://tailscale.com/install.sh | sh
+
+
+# possible flapping issue
+ethtool --set-eee eth0 eee off
+# ethtool -s eth2 speed 1000 duplex full autoneg off
+
+
+# test speed
+speedtest-netperf.sh --host netperf-eu.bufferbloat.net
+speedtest-netperf.sh --host netperf-west.bufferbloat.net
